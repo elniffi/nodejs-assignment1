@@ -1,22 +1,10 @@
-const PORT = 80
-
 const http = require('http')
 const url = require('url')
-
-const handlers = {
-  hello: {
-    post: (callback) => {
-      callback(200, {message: 'Hi there!, hope you are having an awesome day!'})
-    }
-  }
-}
+const { port } = require('./config')
+const handlers = require('./handlers')
 
 const notFoundHandler = (callback) => {
   callback(404)
-}
-
-const router = {
-  hello: handlers.hello
 }
 
 const sendResponse = (res, statusCode = 200, payload = {}) => {
@@ -24,7 +12,13 @@ const sendResponse = (res, statusCode = 200, payload = {}) => {
 
   res.setHeader('Content-Type', 'application/json')
   res.writeHead(statusCode)
-  res.end(payloadString)
+
+  // Only send the payload if it's not an empty object
+  if (payloadString !== '{}') {
+    res.end(payloadString)
+  } else {
+    res.end()
+  }
 }
 
 const unifiedServer = (req, res) => {
@@ -35,8 +29,8 @@ const unifiedServer = (req, res) => {
 
   const method = req.method.toLowerCase()
 
-  if (router[trimmedPath] && router[trimmedPath][method]) {
-    const handler = router[trimmedPath][method]
+  if (handlers[trimmedPath] && handlers[trimmedPath][method]) {
+    const handler = handlers[trimmedPath][method]
 
     handler(sendResponse.bind(null, res))
   } else {
@@ -46,6 +40,6 @@ const unifiedServer = (req, res) => {
 
 const httpServer = http.createServer(unifiedServer)
 
-httpServer.listen(PORT, () => {
-  console.log(`The server is listening for http traffic on port ${PORT}`)
+httpServer.listen(port, () => {
+  console.log(`The server is listening for http traffic on port ${port}`)
 })
